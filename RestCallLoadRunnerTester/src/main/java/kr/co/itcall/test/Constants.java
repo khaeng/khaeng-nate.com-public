@@ -145,6 +145,7 @@ public class Constants {
 					if(StringUtils.isEmpty(key))
 						continue;
 					Object value = properties.getProperty(key.toString(), "");
+					Object orignalValue = value;
 					if(StringUtils.isEmpty(value))
 						continue;
 					int pos = 0;
@@ -165,6 +166,11 @@ public class Constants {
 								pos = end;
 							}
 							continue;
+						}
+						// 새로 생성한 value가 기존 value와 다르면 바꿔야지... 왜 안바꿨니?
+						// 실시간으로 수신되는 값을 swith하기 위해서는 동일변수가 셋팅되어 있으면 안된다.
+						if(!orignalValue.equals(value)) {
+							properties.setProperty(key.toString(), value.toString());
 						}
 						break;
 					}

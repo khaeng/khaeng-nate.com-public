@@ -134,7 +134,7 @@ public abstract class RestTestBase {
 		bwLogger = new BufferedWriter(new FileWriter(logFileName, true));
 
 		this.executor = getExecutor();
-		
+
 		isLoopRelayTest = this.constants.isLoopRelayTest();
 		totalTestCount = this.constants.getTotalTestCount();
 		if(testMultiCount>0) {
@@ -184,7 +184,7 @@ public abstract class RestTestBase {
 				return super.createRequest(uri, httpMethod, requestFactory);
 			}
 		};
-		
+
 		RestTemplate restTemplate = new RestTemplate(bufferingClientHttpRequestFactory);
 		if(restTemplateInterceptor!=null) {
 			List<ClientHttpRequestInterceptor> interceptors = new ArrayList<ClientHttpRequestInterceptor>();
@@ -208,10 +208,10 @@ public abstract class RestTestBase {
 			SSLContext sslContext = SSLContexts.custom()//.useProtocol("TLSv1.2") // TLSv1, TLSv1.1, TLSv1.2, SSL, TLS
 					.loadTrustMaterial(null, trustStrategy)
 					.build();
-			
+
 			RequestConfig config = RequestConfig.custom().setConnectTimeout(this.constants.getConnectionTimeoutForRestClient() * 1000)
 					.setConnectionRequestTimeout(this.constants.getReadTimeoutForRestClient() * 1000).setSocketTimeout(this.constants.getReadTimeoutForRestClient() * 1000).build();
-			
+
 			httpClient = HttpClientBuilder.create().setDefaultRequestConfig(config)
 					.setHostnameVerifier(new AllowAllHostnameVerifier())
 					.setSslcontext(sslContext)
@@ -219,7 +219,7 @@ public abstract class RestTestBase {
 					.setMaxConnTotal(this.constants.getMaxConnTotalForRestClient())
 					.setMaxConnPerRoute(this.constants.getMaxConnPerRouteForRestClient())
 					.build();
-			
+
 //			httpClient = HttpClients.custom().setDefaultRequestConfig(config)
 //					.setHostnameVerifier(new AllowAllHostnameVerifier()).setSslcontext(
 //							new SSLContextBuilder().loadTrustMaterial(null, new org.apache.http.ssl.TrustStrategy() {
@@ -238,7 +238,7 @@ public abstract class RestTestBase {
 		} catch (NoSuchAlgorithmException  | KeyManagementException | KeyStoreException e) {
 			e.printStackTrace();
 		}
-		
+
 		return httpClient;
 	}
 	private CloseableHttpClient getHttpClientWithTLS12only(RestTemplateInterceptor restTemplateInterceptor, String protocols) {
@@ -252,13 +252,13 @@ public abstract class RestTestBase {
 			final SSLContext sslContext = SSLContexts.custom() //.useProtocol("TLSv1.2") // TLSv1, TLSv1.1, TLSv1.2, SSL, TLS
 					.loadTrustMaterial(null, trustStrategy)
 					.build();
-			
+
 			RequestConfig config = RequestConfig.custom().setConnectTimeout(this.constants.getConnectionTimeoutForRestClient() * 1000)
 					.setConnectionRequestTimeout(this.constants.getReadTimeoutForRestClient() * 1000).setSocketTimeout(this.constants.getReadTimeoutForRestClient() * 1000).build();
-			
+
 			String[] arrProtocal = protocols.split(","); // "SSLv3,TLSv1,TLSv1.1,TLSv1.2".split(","); // new String[] {"TLSv1.2"};
 			final SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext,arrProtocal,null, NoopHostnameVerifier.INSTANCE);
-			
+
 			httpClient = HttpClients.custom() // HttpClientBuilder.create()
 					.setSSLSocketFactory(sslConnectionSocketFactory)
 					.setDefaultRequestConfig(config)
@@ -267,7 +267,7 @@ public abstract class RestTestBase {
 					.setMaxConnTotal(this.constants.getMaxConnTotalForRestClient())
 					.setMaxConnPerRoute(this.constants.getMaxConnPerRouteForRestClient())
 					.build();
-			
+
 		} catch (NoSuchAlgorithmException  | KeyManagementException | KeyStoreException e) {
 			e.printStackTrace();
 		}
@@ -278,7 +278,7 @@ public abstract class RestTestBase {
 			for (HttpMessageConverter<?> httpMessageConverter : restTemplate.getMessageConverters()) {
 				if(!(httpMessageConverter instanceof AllEncompassingFormHttpMessageConverter))
 					continue;
-				
+
 				List<HttpMessageConverter<?>> partConverterList = new ArrayList<HttpMessageConverter<?>>();
 				partConverterList.add(new ByteArrayHttpMessageConverter());
 				StringHttpMessageConverter stringHttpMessageConverter = new StringHttpMessageConverter(charset);
@@ -296,13 +296,13 @@ public abstract class RestTestBase {
 					// partConverterList.add(new MappingJacksonHttpMessageConverter());
 					partConverterList.add(new MappingJackson2HttpMessageConverter());
 				}
-				
+
 				((AllEncompassingFormHttpMessageConverter) httpMessageConverter).setPartConverters(partConverterList);
 				((AllEncompassingFormHttpMessageConverter) httpMessageConverter).setCharset(charset);
 				((AllEncompassingFormHttpMessageConverter) httpMessageConverter).setMultipartCharset(charset);
-				
+
 			}
-			
+
 //			List<HttpMessageConverter<?>> partConverterList = new ArrayList<HttpMessageConverter<?>>();
 //			partConverterList.add(new ByteArrayHttpMessageConverter());
 //			StringHttpMessageConverter stringHttpMessageConverter = new StringHttpMessageConverter(charset);
@@ -389,15 +389,16 @@ public abstract class RestTestBase {
 //				} catch (SocketException e) {
 //					// "socket closed" 인 경우는 여러 테스트 수행에 따른 인위적 closed이므로 종료하지 않는다.
 //					if(e.getMessage().equalsIgnoreCase("socket closed")) {
-//						
+//
 //					} else {
-//						
+//
 //					}
 				} catch (IOException e) {
 					// "socket closed" 인 경우는 여러 테스트 수행에 따른 인위적 closed이므로 종료하지 않는다.
 					if(e.getMessage().equalsIgnoreCase("socket closed")) {
 						System.out.println("\n\n========================================================================\n\t다음 테스트 종료대기를 위해 현재 종료대기 소켓이 닫혔습니다.\n========================================================================\n");
 					} else {
+						System.out.println("Testing for Using Listening Sorket Port : " + waitPort);
 						e.printStackTrace();
 						if(stopWaitingServerSocket!=null) try {stopWaitingServerSocket.close();} catch (IOException e1) {}
 						System.exit(-1);
@@ -405,7 +406,7 @@ public abstract class RestTestBase {
 				}finally {
 					try {if(stopWaitingServerSocket!=null)stopWaitingServerSocket.close();} catch (IOException e) {}
 				}
-				if(isExitApp) {
+				if (TestCall.isMultiLaucherFailed || isExitApp) {
 					System.exit(-2);
 				}
 			}
@@ -441,7 +442,7 @@ public abstract class RestTestBase {
 	private String getNowTestResult(boolean isEndTest) {
 		StringBuffer result = new StringBuffer();
 		if(isEndTest) {
-			if(isExitApp)
+			if (TestCall.isMultiLaucherFailed || isExitApp)
 				result.append("\n\n======================================================================================\n\t사용자의 요청에 의해 테스트가 종료되었습니다.\n\n");
 			else
 				result.append("\n\n======================================================================================\n\t테스트가 종료되었습니다.\n\n");
@@ -452,7 +453,7 @@ public abstract class RestTestBase {
 			result.append("Thread[").append(threadName).append("] : ").append(countOfThead.get(threadName)).append(" EA\n");
 		}
 		result.append("Thread Total Run Count : ").append(totalThreadRunCount).append("\n");
-		
+
 		long endTestTime = System.currentTimeMillis();
 		long timeGap = endTestTime - startTestTime;
 		result.append("\n======================================================================================\n\n")
@@ -487,8 +488,8 @@ public abstract class RestTestBase {
 	}
 
 	protected void endOfWork() {
-		
-		if(isExitApp) {
+
+		if (TestCall.isMultiLaucherFailed || isExitApp) {
 			if(constants.isStopFailed() && errorCount>0) {
 				System.out.println("\n\n======================================================================================\n계획된 테스트 중 에러가 발생하여 테스트가 중지 중 입니다. 잠시만 기다려 주십시오.");
 			} else {
@@ -496,7 +497,7 @@ public abstract class RestTestBase {
 			}
 		} else
 			System.out.println("\n\n======================================================================================\n테스트가 마무리 되었습니다. 결과를 정리중이니 잠시만 기다려 주십시오.");
-		
+
 		try {
 			for (int i = 0; i < 70; i++) {
 				System.out.print(i%2==0?"■":"□");
@@ -504,14 +505,14 @@ public abstract class RestTestBase {
 			}
 			System.out.println();
 			} catch (InterruptedException e) {}
-		
+
 		((ThreadPoolTaskExecutor)executor).shutdown();
-		
-//		if(isExitApp) // fileBuffer의 종료를 일정시간 기다려준다.
+
+//		if (TestCall.isMultiLaucherFailed || isExitApp) // fileBuffer의 종료를 일정시간 기다려준다.
 //			try {Thread.sleep(10* 1000);} catch (InterruptedException e) {}
-		
+
 		String result = getNowTestResult(true);
-		
+
 		try {addLogFlush(result);logFileClose();} catch (IOException e) {}
 		System.out.println(result);
 		// System.exit(0); // 연속 테스트를 위하여  remark.
@@ -723,7 +724,7 @@ public abstract class RestTestBase {
 
 	public static String inputUserPopup(String title, String message, String defValue) {
 		final String[] result = new String[] {""};
-		
+
 		Thread threadUiUx = new Thread(() -> {
 			result[0] = JOptionPane.showInputDialog(null, message, title, JOptionPane.INFORMATION_MESSAGE);
 		});
@@ -739,7 +740,7 @@ public abstract class RestTestBase {
 				// if(br!=null) try {br.close();} catch (IOException e) {}
 			}
 		});
-		
+
 		threadUiUx.start();
 		threadCmd.start();
 		while (true) {
@@ -757,7 +758,7 @@ public abstract class RestTestBase {
 	}
 
 	public static void main(String[] args) throws Exception {
-		
+
 		String switchKey = "yyyyMMddHHmmssSSS-23";
 		switchKey = "yyyyMMddHHmmssSSS+111";
 		switchKey += "2019 YYYY DD hh-";
@@ -794,7 +795,7 @@ public abstract class RestTestBase {
 		}
 		System.out.println(switchValue);
 		System.exit(0);
-		
+
 		Date date = new Date("Thu Aug 06 2020 14:46:51 GMT+0900 (sadfaㄴㅁㅇㄹdㅁㄴㅇㄹ)");
 		System.out.println(date);
 		String testStr = "userId=\"><scr<script>ipt>alert(1);var test='91094035ABC한글j';</scr<script>ipt><";
@@ -810,7 +811,7 @@ public abstract class RestTestBase {
 		subMap.put("testSubMap", "ThisIsSubMap");
 		map.put("login.password", 212);
 		map.put("thisKey", subMap);
-		
+
 		List<Map<String, Object>> list = new ArrayList<Map<String,Object>>();
 		list.add(subMap);
 		list.add(subMap);
