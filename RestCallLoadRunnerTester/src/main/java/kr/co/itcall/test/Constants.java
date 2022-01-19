@@ -31,9 +31,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class Constants {
 
 	private static final String BASE_PROPERTIES_FILE_NAME = "base.conf";
-	
+
 	protected static ObjectMapper objectMapper;
-	
+
 	private Properties properties;
 
 	/* for TaskExecutor */
@@ -125,7 +125,7 @@ public class Constants {
 	 * Properties파일을 Load 한다.
 	 * @param propsFile
 	 * @return
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	private Properties readProperties(File propsFile) throws IOException {
 		FileSystemResource fileSystemResource = new FileSystemResource(propsFile);
@@ -287,7 +287,7 @@ public class Constants {
 			return value;
 		}
 	}
-	
+
 	public String getLogPath() {
 		return this.getPropertyValue("log.path", "./log/");
 	}
@@ -298,6 +298,10 @@ public class Constants {
 
 	public boolean isLogging() {
 		return "YESTRUE".contains(this.properties.getProperty("log.logging.yn", "N").toUpperCase());
+	}
+
+	public boolean isSetCookie() {
+		return "YESTRUE".contains(this.properties.getProperty("test.set.cookie.yn", "N").toUpperCase());
 	}
 
 	public boolean isStopFailed() {
@@ -478,10 +482,10 @@ public class Constants {
 			String path = this.getPropertyValue("test."+index+".file."+i+".path", "");
 			final FileSystemResource[] arrFile = new FileSystemResource[] {new FileSystemResource(path)};
 			if(!arrFile[0].isFile() || !arrFile[0].isReadable()) {
-				
-				
+
+
 				final String[] result = new String[] {""};
-				
+
 				Thread threadUiUx = new Thread(()-> {
 					int len = path.lastIndexOf("/");
 					if(len<=0)len=path.length();
@@ -520,9 +524,9 @@ public class Constants {
 						// if(br!=null) try {br.close();} catch (IOException e) {}
 						result[0] = "Console로 파일지정이 완료되었습니다.";
 					}
-					
+
 				});
-				
+
 				threadUiUx.start();
 				threadCmd.start();
 				while (true) {
@@ -536,7 +540,7 @@ public class Constants {
 						break;
 					}
 				}
-				
+
 			} else {
 				body.add(key, arrFile[0]);
 			}
@@ -592,19 +596,19 @@ public class Constants {
 				if(!StringUtils.isEmpty(beforeResultMap) && !StringUtils.isEmpty(switchValue = beforeResultMap.get(switchKey))) {
 					return switchParams(end, new StringBuffer().append(before).append(switchValue).append(after).toString(), beforeResultMap);
 				}
-				
+
 				switchValue = findFromMap(switchKey, beforeResultMap);
 				if(switchValue!=null) {
 					return switchParams(end, new StringBuffer().append(before).append(switchValue).append(after).toString(), beforeResultMap);
 				}
-				
+
 				// Properties에서는 한번만 찾는다.
 				if(!StringUtils.isEmpty(getPropertyValue(switchKey))) {
 					switchValue = getPropertyValue(switchKey);
 					return switchParams(end, new StringBuffer().append(before).append(switchValue).append(after).toString(), beforeResultMap);
 				}
-				
-				
+
+
 				return switchParams(end, params, beforeResultMap);
 			}
 		} else {
@@ -696,7 +700,7 @@ public class Constants {
 	 * @param postFix
 	 * @param index
 	 * @param result
-	 * @return 
+	 * @return
 	 */
 	public Map<String, Object> addKeepDataToMap(Map<String, Object> mapKeepData, String postFix, long index, String resultStr) {
 		String[] keepDataKeys = this.properties.getProperty("test."+index+postFix+".result.keep", "").split(",");

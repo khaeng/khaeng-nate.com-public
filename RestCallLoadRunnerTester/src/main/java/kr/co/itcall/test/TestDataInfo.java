@@ -68,9 +68,9 @@ public class TestDataInfo {
 		this.index = index;
 		this.totalTermDoneCount = totalTermDoneCount;
 		this.printLogTerm = printLogTerm;
-		
+
 		initialize();
-		
+
 	}
 
 	private void initialize() {
@@ -305,16 +305,26 @@ public class TestDataInfo {
 					// testCall.runTest(postFix, index, url, params, restTemplateInterceptor, method, httpHeaders, beforeResultMap, totalTermDoneCount, printLogTerm, mapKeepData, resultMapFirstCall)
 					testCall.runTest(this, restTemplateInterceptor, httpHeaders)
 					));
+			/********************************************************************
+			 * test.xxx.keep.session.yn=Y 로 진입한 경우 세션정보가 변경되었으면 해당 세션정보를
+			 * 치환해준다.
+			 * 모든 헤더정보를 새로 고칠지는 생각해봐야 한다.
+			 */
+			if(! testCall.getHttpHeaders().get(HttpHeaders.COOKIE).equals(httpHeaders.get(HttpHeaders.COOKIE))) {
+				testCall.getHttpHeaders().remove(HttpHeaders.COOKIE);
+				testCall.getHttpHeaders().addAll(httpHeaders.COOKIE, httpHeaders.get(HttpHeaders.COOKIE));
+			}
+
 		} else {
 			this.log.append(this.result.append(
 					// testCall.runTest(postFix, index, url, params, httpHeaders, method, beforeResultMap, totalTermDoneCount, printLogTerm, mapKeepData, resultMapFirstCall)
 					testCall.runTest(this, httpHeaders)
 					));
 		}
-		
+
 		/*** 바로전 호출에서 저장하라는 Key가 있고, 해당 결과값이 있으면 영구저장 버튼에 저장한다. ***/
 		this.mapKeepData = constants.addKeepDataToMap(mapKeepData, postFix, index, result.toString());
-		
+
 //		try {
 //			beforeResultMap.putAll(objectMapper.readValue(result, Map.class));
 //		} catch (Exception e) {}
@@ -383,5 +393,5 @@ public class TestDataInfo {
 		}
 	}
 
-	
+
 }

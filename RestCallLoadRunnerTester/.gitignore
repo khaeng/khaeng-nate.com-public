@@ -1,1 +1,5 @@
 /target/
+/conf.biznaru/
+/log/
+/loadRunner.jar
+/conf/

@@ -88,13 +88,13 @@ public class TestCall extends RestTestBase {
 			inputUserData = "1-" + testConfFiles.size();
 		}
 		int userSelectedIndex = -1;
-		
+
 		// 선택된 테스트(들)을 몇번 동시실행할지 여부(중복실행 개수)
 		if(inputUserData.split("[*]",2).length==2) {
 			testMultiCount = "*" + Integer.parseInt(inputUserData.split("[*]",2)[1].trim());
 			inputUserData = inputUserData.split("[*]",2)[0].trim();
 		}
-		
+
 		if(inputUserData.contains(",")) {
 			System.out.println("===========================================================================");
 			for (String selectedFileName : inputUserData.split(",")) {
@@ -163,7 +163,7 @@ public class TestCall extends RestTestBase {
 //		System.out.println(result);
 //		if(!StringUtils.isEmpty(result))return;
 		try {
-			if(args!=null && args.length>0 && args[0].equalsIgnoreCase("start")) { 
+			if(args!=null && args.length>0 && args[0].equalsIgnoreCase("start")) {
 				if(args!=null && args.length>1 && new File(args[1]).isFile()) {
 					System.out.println("==================================================================\n\t" + runTestMain(args[1]) + "\n==================================================================");
 				} else {
@@ -178,7 +178,7 @@ public class TestCall extends RestTestBase {
 					System.out.println("============================================================================\n\t" + testResult.substring(0, testResult.length()-2) + "\n============================================================================");
 					long timeToEndMillseconds = System.currentTimeMillis();
 					long timeGap = timeToEndMillseconds - timeToStartMillseconds;
-					
+
 					if(callTargetList.length>1) {
 						System.out.println(String.format("\t전체테스트 시작시각 : %s\n\t전체테스트 종료시각 : %s\n\t전체수행 시각(MS) : %,d(ms)\n\t전체수행 시각(TM) : %02d:%02d:%02d.%03d", dateTimeFormat.format(new Date(timeToStartMillseconds)), dateTimeFormat.format(new Date(timeToEndMillseconds)), timeGap, (timeGap/(60*60*1000))%24, (timeGap/(60*1000))%60, (timeGap/(1000))%60, timeGap%1000));
 					}
@@ -199,17 +199,17 @@ public class TestCall extends RestTestBase {
 				}
 			}else {
 				String guide = "Usage : run APP with parameters : [start/stop] [test-configuration-file] [host-addr]\r\n" +
-						"	required paramters : start or stop.\r\n" + 
-						"	[host-addr] is only stop case.\r\n" + 
+						"	required paramters : start or stop.\r\n" +
+						"	[host-addr] is only stop case.\r\n" +
 						"	";
 				System.out.println(guide);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			String guide = "\n" + "Usage : run APP with parameters : [start/stop] [test-configuration-file] [host-addr]\r\n" +
-					"\trequired paramters : start or stop.\r\n" + 
+					"\trequired paramters : start or stop.\r\n" +
 					"\t[host-addr] is only stop case.\r\n" +
-					"\r\n[테스트 시 에러발생]" + 
+					"\r\n[테스트 시 에러발생]" +
 					String.format("\r\n\t☆★○ message[%s]\r\n\t☆★○ cause[%s]\r\n\t☆★○ localMsg[%s]", e.getMessage(), e.getCause(), e.getLocalizedMessage()) +
 					"\r\n";
 			System.out.println(guide);
@@ -227,11 +227,11 @@ public class TestCall extends RestTestBase {
 	}
 
 	public void runTest(int testMultiCount) throws Exception {
-		
+
 		initialize(testMultiCount);
-		
+
 		String resultStr = "";
-		
+
 		/****************************************************************
 		 * 로그인 선행.
 		 ****************************************************************/
@@ -239,7 +239,7 @@ public class TestCall extends RestTestBase {
 		// this.cookie = this.constants.getCookie();
 		String loginId = this.constants.getLoginId();
 		String loginPassword = this.constants.getPassword();
-		if(!StringUtils.isEmpty(loginId) && !StringUtils.isEmpty(loginPassword) && this.constants.isRsaLoginPassword()) {
+		if(!StringUtils.isEmpty(loginId) && !StringUtils.isEmpty(loginPassword)) {
 			String loginPageUrl = this.constants.getLoginPageUrl();
 			String loginParams = this.constants.getLoginPageParams();
 			HttpHeaders loginPageHttpHeaders = this.constants.getLoginPageHeaderInfo(this.httpHeaders, null);
@@ -250,88 +250,90 @@ public class TestCall extends RestTestBase {
 			System.out.println(resultStr);
 	//		<input type="hidden" id="RSAModulus"  value='<c:out value="${_RSAModules}"/>' />
 	//		<input type="hidden" id="RSAExponent" value='<c:out value="${_RSAExponent}"/>' />
-			String rsaModuleId = null;
-			String rsaExponentId = null;
-			String rsaPublicId = null;
-			String rsaModuleKey = null;
-			String rsaExponentKey = null;
-			String publicKeyStr = null;
-			String rsaUrl= this.constants.getRsaUrl();
+			if(this.constants.isRsaLoginPassword()) {
+				String rsaModuleId = null;
+				String rsaExponentId = null;
+				String rsaPublicId = null;
+				String rsaModuleKey = null;
+				String rsaExponentKey = null;
+				String publicKeyStr = null;
+				String rsaUrl= this.constants.getRsaUrl();
 
 
 
-			if(!StringUtils.isEmpty(rsaUrl)) {
-				rsaModuleId = this.constants.getRsaModuleKey();
-				rsaExponentId = this.constants.getRsaExponentKey();
-				rsaPublicId = this.constants.getRsaPublicKey();
-				String rsaParams = this.constants.getRsaParams();
-				rsaParams = switchParams("", -1, rsaParams, null, switchResult(resultStr), null, this.constants, null); // 일차 수신데이터에서 변경.
-				HttpHeaders rsaHttpHeaders = this.constants.getRsaHeaderInfo(this.httpHeaders, switchResult(resultStr));
-				HttpMethod rsaHttpMethod = this.constants.getRsaHttpMethod();
-				if(restTemplateInterceptor==null) {
-					restTemplateInterceptor = new RestTemplateInterceptor(rsaHttpHeaders, this.constants.isLogging());
+				if(!StringUtils.isEmpty(rsaUrl)) {
+					rsaModuleId = this.constants.getRsaModuleKey();
+					rsaExponentId = this.constants.getRsaExponentKey();
+					rsaPublicId = this.constants.getRsaPublicKey();
+					String rsaParams = this.constants.getRsaParams();
+					rsaParams = switchParams("", -1, rsaParams, null, switchResult(resultStr), null, this.constants, null); // 일차 수신데이터에서 변경.
+					HttpHeaders rsaHttpHeaders = this.constants.getRsaHeaderInfo(this.httpHeaders, switchResult(resultStr));
+					HttpMethod rsaHttpMethod = this.constants.getRsaHttpMethod();
+					if(restTemplateInterceptor==null) {
+						restTemplateInterceptor = new RestTemplateInterceptor(rsaHttpHeaders, this.constants.isLogging());
+					} else {
+						restTemplateInterceptor.setHttpHeaders(rsaHttpHeaders);
+					}
+					resultStr = loginTest(0, rsaUrl, rsaParams, restTemplateInterceptor, rsaHttpMethod, rsaHttpHeaders);
+					System.out.println(resultStr);
+					Map<String,Object> rsaResult = switchResult(resultStr);
+					if(!StringUtils.isEmpty(rsaResult)) {
+						publicKeyStr = !StringUtils.isEmpty(rsaResult.get(rsaPublicId))   ? (String)rsaResult.get(rsaPublicId)   : null ;
+						System.out.println("추출한 RSA_PUBLIC_KEY = " + publicKeyStr);
+						rsaModuleKey = !StringUtils.isEmpty(rsaResult.get(rsaModuleId))   ? (String)rsaResult.get(rsaModuleId)   : null ;
+						System.out.println("추출한 RSA_MODULE_KEY = " + rsaModuleKey);
+						rsaExponentKey = !StringUtils.isEmpty(rsaResult.get(rsaExponentId)) ? (String)rsaResult.get(rsaExponentId) : null ;
+						System.out.println("추출한 RSA_EXPONENT_KEY = " + rsaExponentKey);
+						this.httpHeaders = restTemplateInterceptor.getHttpHeaders();
+					}
 				} else {
-					restTemplateInterceptor.setHttpHeaders(rsaHttpHeaders);
-				}
-				resultStr = loginTest(0, rsaUrl, rsaParams, restTemplateInterceptor, rsaHttpMethod, rsaHttpHeaders);
-				System.out.println(resultStr);
-				Map<String,Object> rsaResult = switchResult(resultStr);
-				if(!StringUtils.isEmpty(rsaResult)) {
-					publicKeyStr = !StringUtils.isEmpty(rsaResult.get(rsaPublicId))   ? (String)rsaResult.get(rsaPublicId)   : null ;
-					System.out.println("추출한 RSA_PUBLIC_KEY = " + publicKeyStr);
-					rsaModuleKey = !StringUtils.isEmpty(rsaResult.get(rsaModuleId))   ? (String)rsaResult.get(rsaModuleId)   : null ;
-					System.out.println("추출한 RSA_MODULE_KEY = " + rsaModuleKey);
-					rsaExponentKey = !StringUtils.isEmpty(rsaResult.get(rsaExponentId)) ? (String)rsaResult.get(rsaExponentId) : null ;
-					System.out.println("추출한 RSA_EXPONENT_KEY = " + rsaExponentKey);
-					this.httpHeaders = restTemplateInterceptor.getHttpHeaders();
-				}
-			} else {
-				rsaModuleId = this.constants.getRsaModuleId();
-				rsaExponentId = this.constants.getRsaExponentId();
-				rsaPublicId = this.constants.getRsaPublicId();
-				if(!StringUtils.isEmpty(rsaModuleId)) {
-					try {
-						rsaModuleKey = getValFromKey(rsaModuleId, resultStr);
-						if(StringUtils.isEmpty(rsaModuleKey)) throw new Exception();
-					} catch (Exception e) {
-						rsaModuleKey = getValFromBody(resultStr, this.constants.getRsaModuleStart(), this.constants.getRsaModuleEnd());
+					rsaModuleId = this.constants.getRsaModuleId();
+					rsaExponentId = this.constants.getRsaExponentId();
+					rsaPublicId = this.constants.getRsaPublicId();
+					if(!StringUtils.isEmpty(rsaModuleId)) {
+						try {
+							rsaModuleKey = getValFromKey(rsaModuleId, resultStr);
+							if(StringUtils.isEmpty(rsaModuleKey)) throw new Exception();
+						} catch (Exception e) {
+							rsaModuleKey = getValFromBody(resultStr, this.constants.getRsaModuleStart(), this.constants.getRsaModuleEnd());
+						}
+						System.out.println("추출한 RSA_MODULE_KEY = " + rsaModuleKey);
 					}
-					System.out.println("추출한 RSA_MODULE_KEY = " + rsaModuleKey);
-				}
-				
-				if(!StringUtils.isEmpty(rsaExponentId)) {
-					try {
-						rsaExponentKey = getValFromKey(rsaExponentId, resultStr);
-						if(StringUtils.isEmpty(rsaExponentKey)) throw new Exception();
-					} catch (Exception e) {
-						rsaExponentKey = getValFromBody(resultStr, this.constants.getRsaExponentStart(), this.constants.getRsaExponentEnd());
+
+					if(!StringUtils.isEmpty(rsaExponentId)) {
+						try {
+							rsaExponentKey = getValFromKey(rsaExponentId, resultStr);
+							if(StringUtils.isEmpty(rsaExponentKey)) throw new Exception();
+						} catch (Exception e) {
+							rsaExponentKey = getValFromBody(resultStr, this.constants.getRsaExponentStart(), this.constants.getRsaExponentEnd());
+						}
+						System.out.println("추출한 RSA_EXPONENT_KEY = " + rsaExponentKey);
 					}
-					System.out.println("추출한 RSA_EXPONENT_KEY = " + rsaExponentKey);
-				}
-				
-				if(!StringUtils.isEmpty(rsaPublicId)) {
-					try {
-						publicKeyStr = getValFromKey(rsaPublicId, resultStr);
-						if(StringUtils.isEmpty(publicKeyStr)) throw new Exception();
-					} catch (Exception e) {
-						publicKeyStr = getValFromBody(resultStr, this.constants.getRsaPublicStart(), this.constants.getRsaPublicEnd());
+
+					if(!StringUtils.isEmpty(rsaPublicId)) {
+						try {
+							publicKeyStr = getValFromKey(rsaPublicId, resultStr);
+							if(StringUtils.isEmpty(publicKeyStr)) throw new Exception();
+						} catch (Exception e) {
+							publicKeyStr = getValFromBody(resultStr, this.constants.getRsaPublicStart(), this.constants.getRsaPublicEnd());
+						}
+						System.out.println("추출한 RSA_PUBLIC_KEY = " + publicKeyStr);
 					}
-					System.out.println("추출한 RSA_PUBLIC_KEY = " + publicKeyStr);
 				}
-			}
 
 
 
-			/*********** 로그인을 위한 RSA 암호화 처리 ************/
-			if(!StringUtils.isEmpty(publicKeyStr)) {
-				loginPassword = encryptRsaBase64(loginPassword, publicKeyStr, charset);
-				if(this.constants.isRsaLoginId()) {
-					loginId = encryptRsaBase64(loginId, publicKeyStr, charset);
-				}
-			} else if(!StringUtils.isEmpty(rsaModuleKey) && !StringUtils.isEmpty(rsaExponentKey)) {
-				loginPassword = encryptRsaModule(loginPassword, rsaModuleKey, rsaExponentKey, charset);
-				if(this.constants.isRsaLoginId()) {
-					loginId = encryptRsaModule(loginId, rsaModuleKey, rsaExponentKey, charset);
+				/*********** 로그인을 위한 RSA 암호화 처리 ************/
+				if(!StringUtils.isEmpty(publicKeyStr)) {
+					loginPassword = encryptRsaBase64(loginPassword, publicKeyStr, charset);
+					if(this.constants.isRsaLoginId()) {
+						loginId = encryptRsaBase64(loginId, publicKeyStr, charset);
+					}
+				} else if(!StringUtils.isEmpty(rsaModuleKey) && !StringUtils.isEmpty(rsaExponentKey)) {
+					loginPassword = encryptRsaModule(loginPassword, rsaModuleKey, rsaExponentKey, charset);
+					if(this.constants.isRsaLoginId()) {
+						loginId = encryptRsaModule(loginId, rsaModuleKey, rsaExponentKey, charset);
+					}
 				}
 			}
 		}
@@ -355,7 +357,7 @@ public class TestCall extends RestTestBase {
 			}
 			String loginResult = loginTest(0, loginProcessUrl, loginParams, restTemplateInterceptor, HttpMethod.POST, loginHttpHeaders);
 			System.out.println(loginResult);
-	
+
 			this.httpHeaders = restTemplateInterceptor.getHttpHeaders();
 		}
 
@@ -415,7 +417,7 @@ public class TestCall extends RestTestBase {
 							}
 							// resultStr = processToCallUrl(j, TestCall.this.httpHeaders, beforeResultMap, totalTermDoneCount, printLogTerm, mapKeepData, resultMapFirstCall);
 							processToCallUrl(testDataInfo);
-							
+
 						}
 					}
 				};
@@ -423,7 +425,7 @@ public class TestCall extends RestTestBase {
 				arrThread[i].setName(String.format("TestCall-%05d", i+1));
 				// executor.execute(runnable);
 			}
-			
+
 			// Arrays.asList(arrThread).stream().filter(thread -> !StringUtils.isEmpty(thread)).forEach(thread -> thread.start());
 			Arrays.asList(arrThread).stream().filter(thread -> thread!=null).forEach(thread -> thread.start());
 			// Arrays.asList(arrThread).stream().filter(StringUtils::isEmpty).forEach(System.out::println); // 비어있는 경우만 출력된다.
@@ -439,14 +441,14 @@ public class TestCall extends RestTestBase {
 				}
 			}
 		}
-		
-		
+
+
 		else
-			
-			
+
+
 		{
-			
-			
+
+
 			long totalCallTestCount = totalTestCount * this.constants.getExecutorCorePoolSize();
 			for (long i = 0; i < totalCallTestCount; i++) {
 				if(isExitApp || totalProcessCount>=totalCallTestCount*loopTestCount)
@@ -468,7 +470,7 @@ public class TestCall extends RestTestBase {
 						}
 						// resultStr = processToCallUrl(j, TestCall.this.httpHeaders, beforeResultMap, totalTermDoneCount, printLogTerm, mapKeepData, resultMapFirstCall);
 						processToCallUrl(testDataInfo);
-						
+
 					}
 				};
 				try {
@@ -521,7 +523,7 @@ public class TestCall extends RestTestBase {
 //		}
 
 		HttpEntity<Object> entity = null;
-		
+
 		if(httpHeaders.getContentType().equals(MediaType.MULTIPART_FORM_DATA)) {
 			MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
 			this.constants.setMultipartFile(index, body);
@@ -574,7 +576,7 @@ public class TestCall extends RestTestBase {
 				entity = new HttpEntity<Object>(params, httpHeaders);
 			}
 		}
-		
+
 		String response = null;
 		try {
 			switch (httpMethod) {
@@ -603,14 +605,14 @@ public class TestCall extends RestTestBase {
 				// testDataInfo.setPostFix(testDataInfo.getPostFix()+".failed");
 				return response = String.format("::현재호출[%d%s] 실패시 추가호출 postFix[%s], 최종응답 : %s", index, postFix, failToCallDataInfo.getPostFix(), processToCallUrl(failToCallDataInfo).getResult().toString()); // (postFix+".failed", index, httpHeaders, beforeResultMap, totalTermDoneCount, printLogTerm, mapKeepData, mapFirstCall);
 			}
-			
+
 			addErrorCount();
 			if(e instanceof RestClientResponseException) {
 				response = "Exception.ERROR ::: " + e.getMessage() + " | " + ((RestClientResponseException)e).getResponseBodyAsString();
 			} else {
 				response = "Exception.ERROR ::: " + e.getMessage() + " | " + e;
 			}
-			
+
 		}
 		return response;
 	}
@@ -622,7 +624,7 @@ public class TestCall extends RestTestBase {
 		Map<String, Object> beforeResultMap = testDataInfo.getBeforeResultMap();
 		Map<String,Object> mapKeepData = testDataInfo.getMapKeepData();
 		Map<String,Object> mapFirstCall = testDataInfo.getResultMapFirstCall();
-		
+
 		String resultLike = constants.getTestResultLike(index, postFix, mapKeepData, mapFirstCall, beforeResultMap);
 		if(!StringUtils.isEmpty(resultLike)){
 			int foundIndex;
@@ -634,7 +636,7 @@ public class TestCall extends RestTestBase {
 						if(!StringUtils.isEmpty(like)) {
 							foundIndex = targetStr.indexOf(like);
 							if(foundIndex<0) {
-								throw new Exception(String.format("통신은 성공이나 결과문자열에 예상된 값[%s]이 존재하지 않아 실패처리 되었습니다. 결과예상패턴[%s], 통신결과[%s]", like, resultLike, response));
+								throw new Exception(String.format("통신은 성공이나 결과문자열에 예상된 값[%s]이 존재하지 않아 실패처리 되었습니다. 결과예상패턴전체[%s], 통신결과[%s]", like, resultLike, response));
 							}
 							targetStr = targetStr.substring(foundIndex+like.length());
 						}
@@ -651,7 +653,7 @@ public class TestCall extends RestTestBase {
 		String url = testDataInfo.getUrl();
 		String params = testDataInfo.getParams();
 		HttpMethod httpMethod = testDataInfo.getMethod();
-		
+
 		String response;
 		try {
 			response = loginTest(index, url, params, restTemplateInterceptor, httpMethod, httpHeaders);
@@ -671,7 +673,7 @@ public class TestCall extends RestTestBase {
 				// return response = processToCallUrl(failToCallDataInfo).getResult().toString(); // (postFix+".failed", index, httpHeaders, beforeResultMap, totalTermDoneCount, printLogTerm, mapKeepData, mapFirstCall);
 				return response = String.format("::현재호출[%d%s] 실패시 추가호출 postFix[%s], 최종응답 : %s", index, postFix, failToCallDataInfo.getPostFix(), processToCallUrl(failToCallDataInfo).getResult().toString()); // (postFix+".failed", index, httpHeaders, beforeResultMap, totalTermDoneCount, printLogTerm, mapKeepData, mapFirstCall);
 			}
-			
+
 			addErrorCount();
 			if(e instanceof RestClientResponseException) {
 				response = "Exception.ERROR ::: " + e.getMessage() + " | " + ((RestClientResponseException)e).getResponseBodyAsString();
@@ -688,13 +690,13 @@ public class TestCall extends RestTestBase {
 	}
 	public String loginTest(long index, String url, String params, RestTemplateInterceptor restTemplateInterceptor, HttpMethod httpMethod, HttpHeaders httpHeaders) throws Exception {
 //		MultiValueMap<String, String> headers = new LinkedMultiValueMap<>();
-//		
+//
 //		if (httpHeaders != null) {
 //			for (String key : httpHeaders.keySet()) {
 //				headers.put(key, httpHeaders.get(key));
 //			}
 //		}
-		
+
 		HttpEntity<Object> entity = new HttpEntity<Object>(params, httpHeaders);
 		String response = null;
 		try {
@@ -744,8 +746,8 @@ public class TestCall extends RestTestBase {
 //			}
 //		}
 //		return data;
-		
-		
+
+
 		if(StringUtils.isEmpty(data)) return data;
 		// data=data.replace(/[\r]/g, ""); // 자바스크립트용.
 		if(StringUtils.isEmpty(position)){
@@ -854,7 +856,7 @@ public class TestCall extends RestTestBase {
 		PreparedStatement pstmt = null;
 		ResultSet rs = null;
 		try {
-			
+
 			query = switchParams(postFix, index, constants.switchParams(0, query, beforeResultMap), null, mapKeepData, resultMapFirstCall, constants, beforeResultMap);
 			query = clearRemarkStr(query, "/*", "*/", 0);
 			query = clearRemarkStr(query, "//", null, 0);
@@ -980,10 +982,10 @@ public class TestCall extends RestTestBase {
 //				} else {
 //					sb.append(result = runTest(postFix, index, url, params, httpHeaders, constants.getTestHttpMethod(index, postFix), beforeResultMap, totalTermDoneCount, printLogTerm, mapKeepData, resultMapFirstCall));
 //				}
-//				
+//
 //				/*** 바로전 호출에서 저장하라는 Key가 있고, 해당 결과값이 있으면 영구저장 버튼에 저장한다. ***/
 //				constants.addKeepDataToMap(mapKeepData, postFix, index, result);
-//				
+//
 ////				try {
 ////					beforeResultMap.putAll(objectMapper.readValue(result, Map.class));
 ////				} catch (Exception e) {}
@@ -1021,7 +1023,7 @@ public class TestCall extends RestTestBase {
 //				}
 //				e.printStackTrace();
 			} finally {
-				
+
 			}
 		} else {
 			// break;
