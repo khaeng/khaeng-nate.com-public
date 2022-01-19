@@ -49,6 +49,8 @@ import org.springframework.web.client.RestClientResponseException;
 public class TestCall extends RestTestBase {
 
 	private static final String resultStrFirstCall = null;
+	private static boolean isTestLaucherAllMulti = false;
+	public static boolean isMultiLaucherFailed = false;
 
 	public TestCall(Constants constants) throws IOException {
 		super(constants);
@@ -76,7 +78,11 @@ public class TestCall extends RestTestBase {
 //			}
 //		}
 		System.out.println("===========================================================================");
-		System.out.print  ("출력된 파일번호를 입력하시면 해당 테스트 파일로 테스트를 진행합니다.\n선택할 파일번호는 콤마(,)로 여러개 또는 하이픈(-)으로 범위 선택가능(중복사용불가)\n입력라인 마지막에 *와 숫자 입력 시 선택된 전체 테스트를 지정한 숫자만큼 병렬실행.\n >>> : ");
+		System.out.print(
+				  "출력된 파일번호를 입력하시면 해당 테스트 파일로 테스트를 진행합니다.\n"
+				+ "선택할 파일번호는 콤마(,)로 여러개 또는 하이픈(-)으로 범위 선택가능(중복사용불가)\n"
+				+ "입력라인 마지막에 *와 숫자 입력 시 선택된 전체 테스트를 지정한 숫자만큼 병렬실행."
+				+ "마지막 문자열에 &를 입력할 경우 지정된 테스트를 동시에 실행(동접 테스트 시 사용)\n >>> : ");
 		if(StringUtils.isEmpty(inputUserData)) {
 			br = new BufferedReader(new InputStreamReader(System.in));
 			inputUserData = br.readLine().trim();
@@ -88,6 +94,12 @@ public class TestCall extends RestTestBase {
 			inputUserData = "1-" + testConfFiles.size();
 		}
 		int userSelectedIndex = -1;
+
+		// 선택된 테스트들을 돌시에 실행할 지 여부(1개만 선택할 경우 의미 없음)
+		if(inputUserData.trim().endsWith("&")) {
+			isTestLaucherAllMulti  = true;
+			inputUserData = inputUserData.trim().substring(0, inputUserData.trim().length()-1).trim();
+		}
 
 		// 선택된 테스트(들)을 몇번 동시실행할지 여부(중복실행 개수)
 		if(inputUserData.split("[*]",2).length==2) {
@@ -111,7 +123,7 @@ public class TestCall extends RestTestBase {
 			System.out.println("\t" + log + "\n::: " + inputUserData.split(",").length + "개의 파일들을 선택했습니다. 테스트를 진행합니다.");
 			System.out.println("===========================================================================");
 		} else if(inputUserData.contains("-")) {
-			System.out.println("===========================================================================");
+			System.out.println("===========================================================================\n");
 			int start = Integer.parseInt(inputUserData.split("-", 2)[0].trim());
 			int end = Integer.parseInt(inputUserData.split("-", 2)[1].trim());
 			for (int i=start; i <= end; i++) {
@@ -124,7 +136,10 @@ public class TestCall extends RestTestBase {
 				testFileName += selectedFileName + testMultiCount +",";
 			}
 			testFileName = testFileName.substring(0, testFileName.lastIndexOf(","));
-			System.out.println("\t" + log + "\n::: " + (end-start+1) + "개의 파일들을 선택했습니다. 테스트를 진행합니다.");
+			if(isTestLaucherAllMulti)
+				System.out.println("\t" + log + "\n::: " + (end-start+1) + "개의 파일들이 선택되었으며, 모두 동시에 테스트를 진행합니다.(동시접속.테스트)");
+			else
+				System.out.println("\t" + log + "\n::: " + (end-start+1) + "개의 파일들을 선택했습니다. 각각 순차적으로 테스트를 진행합니다.(* 선택은 별도)");
 			System.out.println("===========================================================================");
 		} else {
 			userSelectedIndex = Integer.parseInt(inputUserData.trim());
@@ -169,22 +184,67 @@ public class TestCall extends RestTestBase {
 				} else {
 					String testResult = "";
 					String[] callTargetList = choiceAndRunTestCaseConfFile(args.length>2?args[1]:"").split(",");
-					long timeToStartMillseconds = System.currentTimeMillis();
-					for (String callTarget : callTargetList) {
-						testResult += runTestMain(callTarget) + "\n\t";
+					long timeToStartMillseconds;
+					if(isTestLaucherAllMulti && callTargetList.length>1) {
+						StringBuffer testResultBuffer = new StringBuffer();
+						Thread[] threads = new Thread[callTargetList.length];
+						for (int i = 0; i<callTargetList.length; ++i) {
+							int idx = i;
+							threads[i] = new Thread(()-> {
+								try {
+									String testResultEachThread = runTestMain(callTargetList[idx]);
+									synchronized (testResultBuffer) {
+										testResultBuffer.append(testResultEachThread).append("\n\t");
+									}
+								} catch (Exception e) {
+									isMultiLaucherFailed = true; // 실패 시 종료하게 설정되어 있으면 더이상 테스트 하지 않게 한다.
+									e.printStackTrace();
+								}
+							});
+						}
+						timeToStartMillseconds = System.currentTimeMillis();
+						for (Thread thread : threads) {
+							thread.start(); // Multi Thread Laucher...
+						}
+						for (Thread thread : threads) {
+							thread.join(); // Waitting Thread Process...
+						}
+						testResult = testResultBuffer.toString();
+					} else {
+						timeToStartMillseconds = System.currentTimeMillis();
+						for (String callTarget : callTargetList) {
+							testResult += runTestMain(callTarget) + "\n\t";
+						}
 					}
 					System.out.println("\n\n");
-					System.out.println("☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★");
+					System.out.println("☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆");
 					System.out.println("============================================================================\n\t" + testResult.substring(0, testResult.length()-2) + "\n============================================================================");
 					long timeToEndMillseconds = System.currentTimeMillis();
 					long timeGap = timeToEndMillseconds - timeToStartMillseconds;
 
-					if(callTargetList.length>1) {
+					if(isTestLaucherAllMulti && callTargetList.length>1) {
+						StringBuilder sysout = new StringBuilder();
+						sysout
+							.append("\n")
+							.append("\t사용 Thread 개수 : ").append(callTargetList.length).append("\n")
+							.append("\t전체 테스트 개수 : ").append(totalProcessCount).append("\n")
+							.append("\t호출 테스트 성공 : ").append(totalSuccCount).append("\n")
+							.append("\t호출 테스트 실패 : ").append(errorCount).append("\n")
+							.append("\t시스템 에러 개수 : ").append(systemErrorCount).append("\n")
+							.append("----------------------------------------------------------------------------\n")
+							.append("\t테스트 시작시각 : ").append(dateTimeFormat.format(new Date(timeToStartMillseconds))).append("\n")
+							.append("\t테스트 종료시각 : ").append(dateTimeFormat.format(new Date(timeToEndMillseconds))).append("\n")
+							.append("\t수행 시각(MS) : ").append(String.format("%,d(ms)", timeGap)).append("\n")
+							.append("\t수행 시각(TM) : ").append(String.format("%02d:%02d:%02d.%03d", (timeGap/(60*60*1000))%24, (timeGap/(60*1000))%60, (timeGap/(1000))%60, timeGap%1000)).append("\n")
+							.append("\t초당 처리개수(TPS) : ").append(String.format("%,.2f(Tps)", (float)totalProcessCount/((timeToEndMillseconds - timeToStartMillseconds)/1000))).append("\n")
+							;
+						System.out.print(sysout.toString());
+					} else if(callTargetList.length>1) {
 						System.out.println(String.format("\t전체테스트 시작시각 : %s\n\t전체테스트 종료시각 : %s\n\t전체수행 시각(MS) : %,d(ms)\n\t전체수행 시각(TM) : %02d:%02d:%02d.%03d", dateTimeFormat.format(new Date(timeToStartMillseconds)), dateTimeFormat.format(new Date(timeToEndMillseconds)), timeGap, (timeGap/(60*60*1000))%24, (timeGap/(60*1000))%60, (timeGap/(1000))%60, timeGap%1000));
 					}
 				}
 				System.out.println("☆★☆★☆★☆★ 모든 테스트가 성공했습니다. [Succeed in your All Test Process.] ☆★☆★☆★☆★");
-				System.out.println("☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★");
+				System.out.println("☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆");
 			}else if(args!=null && args.length>0 && args[0].equalsIgnoreCase("stop")) {
 				String hostAddr = "localhost";
 				if(args.length>2)
@@ -399,7 +459,7 @@ public class TestCall extends RestTestBase {
 					long totalTermDoneCount = 0;
 					TestDataInfo testDataInfo = null;
 					while (totalTestCount>totalTermDoneCount) {
-						if (isExitApp/* || totalProcessCount>=totalTestCount */)
+						if (TestCall.isMultiLaucherFailed || isExitApp/* || totalProcessCount>=totalTestCount */)
 							break;
 						++totalTermDoneCount;
 						if(constants.getSleepTimeBeforeGroup()>0)
@@ -451,7 +511,7 @@ public class TestCall extends RestTestBase {
 
 			long totalCallTestCount = totalTestCount * this.constants.getExecutorCorePoolSize();
 			for (long i = 0; i < totalCallTestCount; i++) {
-				if(isExitApp || totalProcessCount>=totalCallTestCount*loopTestCount)
+				if (TestCall.isMultiLaucherFailed || isExitApp || totalProcessCount>=totalCallTestCount*loopTestCount)
 					break;
 				final long totalTermDoneCount = i;
 				Runnable runnable = () -> {
@@ -489,7 +549,7 @@ public class TestCall extends RestTestBase {
 			}
 			while (true) {
 				try {Thread.sleep(1000);} catch (InterruptedException e) {}
-				if(isExitApp || ((ThreadPoolTaskExecutor)executor).getActiveCount() <= 0)
+				if (TestCall.isMultiLaucherFailed || isExitApp || ((ThreadPoolTaskExecutor)executor).getActiveCount() <= 0)
 					break;
 			}
 		}
